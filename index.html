@@ -101,7 +101,7 @@
             data:{
                 label:'show_person_to_search',
                 target: target_index,
-                target_presence: ['absent','present'][target_presence]
+                target_presence: target_presence ? 'present' : 'absent',
             }
 
         };
@@ -248,5 +248,6 @@
 
   </script>
 </html>
+
 
 
