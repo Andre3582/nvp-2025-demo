@@ -11,18 +11,33 @@
     <script src="https://unpkg.com/@jspsych/plugin-preload@2.1.0"></script>
     <script src="https://unpkg.com/@jspsych/plugin-image-keyboard-response@2.1.0"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
-    <link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet" type="text/css" />
-      <style> 
-    .fixation {font-size: 90px; font-weight: bold; color: gray;}
-  </style>
-    
+    <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
+    <link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet" type="text/css" />    
   </head>
   <body></body>
   <script>
 
+    //Initialize jsPsysch
+    const jsPsych = initJsPsych({
+
+      on_finish: function() {
+
+      }
+    });
+
+
+    // subject id
+    const subject_id = jsPsych.randomization.randomID(10);
+    const filename = `${subject_id}_PILOTING.csv`;
+
+    jsPsych.data.addProperties({participantID: filename});
+
+
     // trial parameters
     const person_presentation_time = 2000
     const grid_presentation_time = 2000
+
+    
 
 
     // get stimuli
@@ -47,24 +62,7 @@
 
 
 
-    //Initialize jsPsysch
-    const jsPsych = initJsPsych({
 
-      on_finish: function() {
-        // When the exp is done:
-        // Get the participants data as a json string. The data can then be saved on a server.
-        const pp_data_json = jsPsych.data.get().json()
-
-        // also we can display the raw data on the screen 
-        jsPsych.data.displayData('json');   
-        // and locally save it to the device for testing purposes
-        jsPsych.data.get().localSave('json','demo_exp_lerenkijken.json');
-      }
-    });
-
-
-    // Add a participant ID to data
-    jsPsych.data.addProperties({participantID: "pp_2572"});
 
     const preload = {
         type: jsPsychPreload,
@@ -74,16 +72,12 @@
     function make_trial_sequence(target_presence){
 
         let all_indices = [...Array(31).keys()]
-        console.log("all_indices", all_indices)
 
         let target_index = jsPsych.randomization.randomInt(0, 30)
-        console.log("target_index", target_index)
 
         all_indices.splice(target_index, 1)
 
         let all_but_target_indices = all_indices
-        
-        console.log("all_but_target_indices", all_but_target_indices)
 
         let crowd_indices 
         
@@ -101,7 +95,7 @@
             type: jsPsychImageKeyboardResponse,
             stimulus: stims[target_index],
             stimulus_width: function(){return Math.min( window.innerWidth/3, window.innerHeight/4) },
-            prompt: "<p style='font-size:70px;'>Find this person in the crowd.</p>",
+            prompt: "<p style='font-size:55px;'>Find this person in the crowd.</p>",
             choices: 'NO_KEYS',
             trial_duration: person_presentation_time,
             data:{
@@ -126,12 +120,12 @@
         const ask_presence = {
         type: jsPsychImageButtonResponse,
         stimulus:  stims[target_index],
-        prompt: "<p style='font-size:70px;'>Was this person there?</p>",
-        choices: ["<p style='font-size:70px;'>Yes</p>", "<p style='font-size:70px;'>No</p>"],
+        prompt: "<p style='font-size:55px;'>Was this person there?</p>",
+        choices: ["<p style='font-size:55px;'>Yes</p>", "<p style='font-size:55px;'>No</p>"],
         
-        data:{
-            label:'ask_presence',
-        }
+            data:{
+                label:'ask_presence',
+            }
         }
 
         const ask_confidence = {
@@ -139,14 +133,14 @@
             stimulus: stims[target_index],
             stimulus_width: function(){return Math.min( window.innerWidth/3, window.innerHeight/4) },
             require_movement:true,
-            labels: ["<p style='font-size:70px;'>Not sure</p>", "<p style='font-size:70px;'>Very sure<p>"],
+            labels: ["<p style='font-size:55px;'>Not sure</p>", "<p style='font-size:55px;'>Very sure<p>"],
             prompt: function(){
                 let response_data =  jsPsych.data.getLastTrialData().trials[0]
                 let prev_response = ['PRESENT', 'ABSENT'][response_data.response]
-                return "<p style='font-size:70px;'>You said this person was "+prev_response+".<br>How sure are you about that?</p>"
+                return "<p style='font-size:55px;'>You said this person was "+prev_response+"<br>How sure are you about that?</p>"
             },
             post_trial_gap: 750,
-            button_label: "<p style='font-size:70px;'>Continue</p>",    
+            button_label: "<p style='font-size:55px;'>Continue</p>",    
             data:{
                 label:'ask_confidence',
             }
@@ -160,18 +154,96 @@
     }
 
     // build trial sequence:
-    
-    
+    const intro = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: "<p style='font-size:55px;'>Welcome to this visual search experiment!</p>",
+        choices: ["<p style='font-size:55px;'>Begin!</p>"],
+        data:{
+            label:'intro',
+        }
+    };
 
+    const debrief = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<p style='font-size:55px;'>Your data is saved! You can close this window now.</p>",
+        choices: 'NO_KEYS',
+        data:{
+            label:'debrief',
+        }
+    };
 
+    const save_data = {
+        type: jsPsychPipe,
+        action: "save",
+        experiment_id: "ayWpeEMf2JK1",
+        filename: filename,
+        data_string: ()=>jsPsych.data.get().csv()
+    };
     
+    let present_10_absent_2 = [
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+    ]
+
+    let present_2_absent_10 = [
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+    ]
+
+    let present_6_absent_6 = [
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(false),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+        make_trial_sequence(true),
+    ]
+
+    present_10_absent_2 = jsPsych.randomization.shuffle(present_10_absent_2)
+    present_2_absent_10 = jsPsych.randomization.shuffle(present_2_absent_10)
+    present_6_absent_6  = jsPsych.randomization.shuffle(present_6_absent_6 )
+
     // Put the trials on a 'timeline' in the right order
-    const timeline = [preload, make_trial_sequence(true), make_trial_sequence(false)]
+    const timeline_0 = [preload, intro, ...present_10_absent_2, save_data, debrief]
+    const timeline_1 = [preload, intro, ...present_2_absent_10, save_data, debrief]
+    const timeline_2 = [preload, intro, ...present_6_absent_6, save_data, debrief]
 
-    // run the timeline
-    jsPsych.run( timeline);
+    async function createExperiment(){
+    const condition = await jsPsychPipe.getCondition("ayWpeEMf2JK1");
+
+    if(condition == 0) { timeline = timeline_0; }
+    if(condition == 1) { timeline = timeline_1; }
+    if(condition == 2) { timeline = timeline_2; }
+    jsPsych.run(timeline);
+    }
+    createExperiment();
+                  
 
   </script>
 </html>
-
-
