@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
   <head>
@@ -12,17 +13,48 @@
     <script src="https://unpkg.com/@jspsych/plugin-image-keyboard-response@2.1.0"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
     <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
-    <link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet" type="text/css" />    
+    <link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet" type="text/css" />  
+    <style> 
+        .jspsych-display-element {
+            font-size: 40px;
+        }
+        .jspsych-btn {
+            font-size: 40px;
+            border: 10px solid transparent;
+            border-radius: 16px;
+            color: #333;
+            background-color: #8ee86d8d;
+            border-color: #2f5920e9;
+            padding: 1px 60px;
+        }
+        .jspsych-slider::-webkit-slider-thumb {
+            border: 10px solid #2f5920e9;
+            height: 80px;
+            width: 80px;
+            border-radius: 40px;
+            background: #8ee86d8d;
+            margin-top: -20px;
+        }   
+        .jspsych-slider::-webkit-slider-runnable-track {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 60%;
+            height: 50px;
+            cursor: pointer;
+            background: #fff;
+            box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+            border-radius: 2px;
+            border: 5px solid #aaa;
+}     
+    </style>  
   </head>
   <body></body>
   <script>
 
     //Initialize jsPsysch
     const jsPsych = initJsPsych({
+        show_progress_bar: false
 
-      on_finish: function() {
-
-      }
     });
 
 
@@ -34,8 +66,8 @@
 
 
     // trial parameters
-    const person_presentation_time = 2000
-    const grid_presentation_time = 2000
+    const person_presentation_time = 1000
+    const grid_presentation_time = 1000
 
     
 
@@ -95,7 +127,7 @@
             type: jsPsychImageKeyboardResponse,
             stimulus: stims[target_index],
             stimulus_width: function(){return Math.min( window.innerWidth/3, window.innerHeight/4) },
-            prompt: "<p style='font-size:45px;'>Find this person in the crowd.</p>",
+            prompt: "<p>Find this person in the crowd.</p>",
             choices: 'NO_KEYS',
             trial_duration: person_presentation_time,
             data:{
@@ -112,6 +144,7 @@
         choices: 'NO_KEYS',
         trial_duration: grid_presentation_time,
         save_trial_parameters:{stimulus:false},
+        post_trial_gap: 500,
         data:{
             label:'show_grid',
             crowd: crowd_indices.toString()
@@ -119,13 +152,22 @@
         };
 
         const ask_presence = {
-        type: jsPsychImageButtonResponse,
-        stimulus:  stims[target_index],
-        prompt: "<p style='font-size:45px;'>Was this person there?</p>",
-        choices: ["<p style='font-size:45px;'>Yes</p>", "<p style='font-size:45px;'>No</p>"],
-        
+            type: jsPsychImageButtonResponse,
+            stimulus:  stims[target_index],
+            stimulus_width: function(){return Math.min( window.innerWidth/3, window.innerHeight/4) },
+            prompt: "<p>Was this person there?</p>",
+            choices: ["<p>Yes</p>", "<p>No</p>"],
             data:{
                 label:'ask_presence',
+                target_presence: target_presence,
+            },
+            on_finish: function(data){
+
+                if( data.response != Number(data.target_presence) ){ // this is reversed because a yes response gets resp 0
+                data.correct = 1;
+                } else {
+                data.correct = 0;
+                }
             }
         }
 
@@ -134,14 +176,14 @@
             stimulus: stims[target_index],
             stimulus_width: function(){return Math.min( window.innerWidth/3, window.innerHeight/4) },
             require_movement:true,
-            labels: ["<p style='font-size:45px;'>Not sure</p>", "<p style='font-size:45px;'>Very sure<p>"],
+            labels: ["<p>Not sure</p>", "<p>Very sure<p>"],
             prompt: function(){
                 let response_data =  jsPsych.data.getLastTrialData().trials[0]
                 let prev_response = ['PRESENT', 'ABSENT'][response_data.response]
-                return "<p style='font-size:45px;'>You said this person was "+prev_response+"<br>How sure are you about that?</p>"
+                return "<p>You said this person was "+prev_response+"<br>How sure are you about that?</p>"
             },
             post_trial_gap: 750,
-            button_label: "<p style='font-size:45px;'>Continue</p>",    
+            button_label: "<p>Continue</p>",    
             data:{
                 label:'ask_confidence',
             }
@@ -157,8 +199,8 @@
     // build trial sequence:
     const intro = {
         type: jsPsychHtmlButtonResponse,
-        stimulus: "<p style='font-size:45px;'>Welcome to this visual search experiment!</p>",
-        choices: ["<p style='font-size:45px;'>Begin!</p>"],
+        stimulus: "<p>Welcome to this visual search experiment!</p>",
+        choices: ["<p>Begin!</p>"],
         data:{
             label:'intro',
         }
@@ -166,11 +208,20 @@
 
     const debrief = {
         type: jsPsychHtmlKeyboardResponse,
-        stimulus: "<p style='font-size:45px;'>Your data is saved! You can close this window now.</p>",
-        choices: 'NO_KEYS',
-        data:{
-            label:'debrief',
-        }
+        stimulus: function(){
+            let n_trials =jsPsych.data.get().filter({label: 'ask_presence'}).count()
+            let n_correct = jsPsych.data.get().filter({label: 'ask_presence', correct:1}).count()
+            let p_confidence = jsPsych.data.get().filter({label: 'ask_confidence'}).select('response').mean()
+            return "<p>Your data is saved!</p>"+
+            `<p>You answered ${n_correct} of ${n_trials} questions correctly!</p>`+
+             `<p>You were about ${Math.round(p_confidence)}% sure of your answers!</p>`+
+            "<p>You may close this window now.</p>"
+        },
+        save_trial_parameters:{stimulus:false},
+            choices: 'NO_KEYS',
+            data:{
+                label:'debrief',
+            }
     };
 
     const save_data = {
@@ -234,6 +285,12 @@
     const timeline_0 = [preload, intro, ...present_10_absent_2, save_data, debrief]
     const timeline_1 = [preload, intro, ...present_2_absent_10, save_data, debrief]
     const timeline_2 = [preload, intro, ...present_6_absent_6, save_data, debrief]
+
+    // piloting from 
+    // const timeline_0 = [preload, intro, make_trial_sequence(false),make_trial_sequence(true), debrief]
+    // const timeline_1 = [preload, intro, make_trial_sequence(false),make_trial_sequence(true), debrief]
+    // const timeline_2 = [preload, intro, make_trial_sequence(false),make_trial_sequence(true), debrief]
+
 
     async function createExperiment(){
     const condition = await jsPsychPipe.getCondition("ayWpeEMf2JK1");
