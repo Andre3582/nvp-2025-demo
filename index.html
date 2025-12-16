@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My experiment</title>
+    <!-- Get all the required libraries -->
+    <script src="https://unpkg.com/jspsych@8.2.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-image-button-response@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-image-slider-response@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-instructions@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-preload@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-image-keyboard-response@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+    <link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet" type="text/css" />
+    
+  </head>
+  <body></body>
+  <script>
+
+    // trial parameters
+    const person_presentation_time = 2000
+    const grid_presentation_time = 2000
+
+
+    // get stimuli
+    const stims = []
+    for (let i=0; i<31; i++){
+        stims.push('Picture'+i+'.png')
+
+    }
+
+    function make_grid_stim(i){
+      let min_size = Math.min( window.innerWidth/3, window.innerHeight/4)
+      let dim = min_size * 0.8
+
+      return `
+      <img src="${stims[i[0]]}" width="${dim}" height="${dim}" > <img src="${stims[i[1]]}"width="${dim}" height="${dim}">  <img src="${stims[i[2]]}" width="${dim}" height="${dim}"> <br>
+      <img src="${stims[i[3]]}" width="${dim}" height="${dim}" > <img src="${stims[i[4]]}"width="${dim}" height="${dim}">  <img src="${stims[i[5]]}" width="${dim}" height="${dim}"> <br>
+      <img src="${stims[i[6]]}" width="${dim}" height="${dim}" > <img src="${stims[i[7]]}"width="${dim}" height="${dim}">  <img src="${stims[i[8]]}" width="${dim}" height="${dim}"> <br>
+      <img src="${stims[i[9]]}" width="${dim}" height="${dim}" > <img src="${stims[i[10]]}"width="${dim}" height="${dim}">  <img src="${stims[i[11]]}" width="${dim}" height="${dim}"> <br>     
+      ` 
+
+    }
+
+
+
+    //Initialize jsPsysch
+    const jsPsych = initJsPsych({
+
+      on_finish: function() {
+        // When the exp is done:
+        // Get the participants data as a json string. The data can then be saved on a server.
+        const pp_data_json = jsPsych.data.get().json()
+
+        // also we can display the raw data on the screen 
+        jsPsych.data.displayData('json');   
+        // and locally save it to the device for testing purposes
+        jsPsych.data.get().localSave('json','demo_exp_lerenkijken.json');
+      }
+    });
+
+
+    // Add a participant ID to data
+    jsPsych.data.addProperties({participantID: "pp_2572"});
+
+    const preload = {
+        type: jsPsychPreload,
+        images: stims,
+    }
+
+    function make_trial_sequence(target_presence){
+
+        let all_indices = [...Array(31).keys()]
+        console.log("all_indices", all_indices)
+
+        let target_index = jsPsych.randomization.randomInt(0, 30)
+        console.log("target_index", target_index)
+
+        all_indices.splice(target_index, 1)
+
+        let all_but_target_indices = all_indices
+        
+        console.log("all_but_target_indices", all_but_target_indices)
+
+        let crowd_indices 
+        
+
+        if (target_presence){
+            crowd_indices = jsPsych.randomization.sampleWithoutReplacement(all_but_target_indices, 11) 
+            crowd_indices.push(target_index)
+            crowd_indices = jsPsych.randomization.shuffle(crowd_indices)
+        } else {
+            crowd_indices = jsPsych.randomization.sampleWithoutReplacement(all_but_target_indices, 12) 
+        }
+
+        // Make subtrials
+        const show_person_to_search = {
+            type: jsPsychImageKeyboardResponse,
+            stimulus: stims[target_index],
+            stimulus_width: function(){return Math.min( window.innerWidth/3, window.innerHeight/4) },
+            prompt: "<p>Find this person in the crowd.</p>",
+            choices: 'NO_KEYS',
+            trial_duration: person_presentation_time,
+            data:{
+                label:'show_person_to_search',
+                target: target_index,
+                target_presence: ['absent','present'][target_presence]
+            }
+
+        };
+
+        const show_grid = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: make_grid_stim(crowd_indices),
+        choices: 'NO_KEYS',
+        trial_duration: grid_presentation_time,
+        data:{
+            label:'show_grid',
+            crowd: crowd_indices
+        }
+        };
+
+        const ask_presence = {
+        type: jsPsychImageButtonResponse,
+        stimulus:  stims[target_index],
+        prompt: "Was this person there?",
+        choices: ['Yes', 'No'],
+        data:{
+            label:'ask_presence',
+        }
+        }
+
+        const ask_confidence = {
+            type: jsPsychImageSliderResponse,
+            stimulus: stims[target_index],
+            stimulus_width: function(){return Math.min( window.innerWidth/3, window.innerHeight/4) },
+            require_movement:true,
+            labels: ['<p>Not sure</p>', '<p>Very sure<p>'],
+            prompt: function(){
+                let response_data =  jsPsych.data.getLastTrialData().trials[0]
+                let prev_response = ['PRESENT', 'ABSENT'][response_data.response]
+                return "<p>You said this person was "+prev_response+".<br>How sure are you about that?</p>"
+            },
+            post_trial_gap: 750,        
+            data:{
+                label:'ask_confidence',
+            }
+        };
+
+        const one_trial_procedure = {
+            timeline: [show_person_to_search, show_grid, ask_presence, ask_confidence]
+        }
+
+        return one_trial_procedure
+    }
+
+    // build trial sequence:
+    
+    
+
+
+    
+    // Put the trials on a 'timeline' in the right order
+    const timeline = [preload, make_trial_sequence(true), make_trial_sequence(false)]
+
+    // run the timeline
+    jsPsych.run( timeline);
+
+  </script>
+</html>
