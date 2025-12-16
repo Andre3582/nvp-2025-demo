@@ -111,9 +111,10 @@
         stimulus: make_grid_stim(crowd_indices),
         choices: 'NO_KEYS',
         trial_duration: grid_presentation_time,
+        save_trial_parameters:{stimulus:false},
         data:{
             label:'show_grid',
-            crowd: crowd_indices
+            crowd: crowd_indices.toString()
         }
         };
 
@@ -247,4 +248,5 @@
 
   </script>
 </html>
+
 
