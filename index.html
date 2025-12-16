@@ -95,7 +95,7 @@
             type: jsPsychImageKeyboardResponse,
             stimulus: stims[target_index],
             stimulus_width: function(){return Math.min( window.innerWidth/3, window.innerHeight/4) },
-            prompt: "<p style='font-size:55px;'>Find this person in the crowd.</p>",
+            prompt: "<p style='font-size:45px;'>Find this person in the crowd.</p>",
             choices: 'NO_KEYS',
             trial_duration: person_presentation_time,
             data:{
@@ -120,8 +120,8 @@
         const ask_presence = {
         type: jsPsychImageButtonResponse,
         stimulus:  stims[target_index],
-        prompt: "<p style='font-size:55px;'>Was this person there?</p>",
-        choices: ["<p style='font-size:55px;'>Yes</p>", "<p style='font-size:55px;'>No</p>"],
+        prompt: "<p style='font-size:45px;'>Was this person there?</p>",
+        choices: ["<p style='font-size:45px;'>Yes</p>", "<p style='font-size:45px;'>No</p>"],
         
             data:{
                 label:'ask_presence',
@@ -133,14 +133,14 @@
             stimulus: stims[target_index],
             stimulus_width: function(){return Math.min( window.innerWidth/3, window.innerHeight/4) },
             require_movement:true,
-            labels: ["<p style='font-size:55px;'>Not sure</p>", "<p style='font-size:55px;'>Very sure<p>"],
+            labels: ["<p style='font-size:45px;'>Not sure</p>", "<p style='font-size:45px;'>Very sure<p>"],
             prompt: function(){
                 let response_data =  jsPsych.data.getLastTrialData().trials[0]
                 let prev_response = ['PRESENT', 'ABSENT'][response_data.response]
-                return "<p style='font-size:55px;'>You said this person was "+prev_response+"<br>How sure are you about that?</p>"
+                return "<p style='font-size:45px;'>You said this person was "+prev_response+"<br>How sure are you about that?</p>"
             },
             post_trial_gap: 750,
-            button_label: "<p style='font-size:55px;'>Continue</p>",    
+            button_label: "<p style='font-size:45px;'>Continue</p>",    
             data:{
                 label:'ask_confidence',
             }
@@ -156,8 +156,8 @@
     // build trial sequence:
     const intro = {
         type: jsPsychHtmlButtonResponse,
-        stimulus: "<p style='font-size:55px;'>Welcome to this visual search experiment!</p>",
-        choices: ["<p style='font-size:55px;'>Begin!</p>"],
+        stimulus: "<p style='font-size:45px;'>Welcome to this visual search experiment!</p>",
+        choices: ["<p style='font-size:45px;'>Begin!</p>"],
         data:{
             label:'intro',
         }
@@ -165,7 +165,7 @@
 
     const debrief = {
         type: jsPsychHtmlKeyboardResponse,
-        stimulus: "<p style='font-size:55px;'>Your data is saved! You can close this window now.</p>",
+        stimulus: "<p style='font-size:45px;'>Your data is saved! You can close this window now.</p>",
         choices: 'NO_KEYS',
         data:{
             label:'debrief',
@@ -247,3 +247,4 @@
 
   </script>
 </html>
+
