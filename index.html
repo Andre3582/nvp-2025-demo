@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>My experiment</title>
+    <title>NVP 2025 demo by Andre Sahakian</title>
     <!-- Get all the required libraries -->
     <script src="https://unpkg.com/jspsych@8.2.2"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.1.0"></script>
@@ -45,7 +45,26 @@
             box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
             border-radius: 2px;
             border: 5px solid #aaa;
-}     
+        }     
+
+        #jspsych-progressbar-container {
+            color: #000000e9;
+            border-bottom: 5px solid #2f5920e9;
+            background-color: #ffffff;
+        }
+
+        #jspsych-progressbar-container span {
+            font-size: 25px;
+            padding-right: 25px;
+        }
+
+        #jspsych-progressbar-outer {
+            background-color: #8ee86d8d;
+        }
+
+        #jspsych-progressbar-inner {
+            background-color: #2f5920e9;
+        }
     </style>  
   </head>
   <body></body>
@@ -53,7 +72,8 @@
 
     //Initialize jsPsysch
     const jsPsych = initJsPsych({
-        show_progress_bar: true
+        show_progress_bar: true,
+        message_progress_bar: 'Progress'
 
     });
 
@@ -199,29 +219,46 @@
     // build trial sequence:
     const intro = {
         type: jsPsychHtmlButtonResponse,
-        stimulus: "<p>Welcome to this visual search experiment!</p>",
+        stimulus: "<h3>Welcome to this visual search demo-experiment!</h3>"+
+        "<p>There will be 12 trials.</p><p>In the end, you can choose to save your data on OSF.</p>",
         choices: ["<p>Begin!</p>"],
         data:{
             label:'intro',
         }
     };
+    
 
     const debrief = {
-        type: jsPsychHtmlKeyboardResponse,
+        type: jsPsychHtmlButtonResponse,
         stimulus: function(){
             let n_trials =jsPsych.data.get().filter({label: 'ask_presence'}).count()
             let n_correct = jsPsych.data.get().filter({label: 'ask_presence', correct:1}).count()
             let p_confidence = jsPsych.data.get().filter({label: 'ask_confidence'}).select('response').mean()
-            return "<p>Your data is saved!</p>"+
-            `<p>You answered ${n_correct} of ${n_trials} questions correctly!</p>`+
-             `<p>You were about ${Math.round(p_confidence)}% sure of your answers!</p>`+
-            "<p>You may close this window now.</p>"
+            return "<h3>You are done. Thanks!</h3>"+
+            `<p>You answered ${n_correct} of ${n_trials} questions correctly.</p>`+
+             `<p>You were about ${Math.round(p_confidence)}% sure of your answers.</p>`+
+            "<p>Tap below to save your data to OSF! Or close this window instead.</p>"
         },
         save_trial_parameters:{stimulus:false},
-            choices: 'NO_KEYS',
-            data:{
-                label:'debrief',
-            }
+        choices: ["<p>Save data!</p>"],
+        data:{
+            label:'debrief',
+        },
+        on_start: function(){
+            jsPsych.progressBar.progress = 1; // set progress bar to 100% full.
+        }
+    };
+    const outro = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<p>Your data was successfully saved!</p>"+
+        "<p>You may close this window now.</p>",
+        choices: 'NO_KEYS',
+        data:{
+            label:'outro',
+        },
+        on_start: function(){
+            jsPsych.progressBar.progress = 1; // set progress bar to 100% full.
+        }
     };
 
     const save_data = {
@@ -282,14 +319,14 @@
     present_6_absent_6  = jsPsych.randomization.shuffle(present_6_absent_6 )
 
     // Put the trials on a 'timeline' in the right order
-    const timeline_0 = [preload, intro, ...present_10_absent_2, save_data, debrief]
-    const timeline_1 = [preload, intro, ...present_2_absent_10, save_data, debrief]
-    const timeline_2 = [preload, intro, ...present_6_absent_6, save_data, debrief]
+    const timeline_0 = [preload, intro, ...present_10_absent_2, debrief, save_data, outro]
+    const timeline_1 = [preload, intro, ...present_2_absent_10, debrief, save_data, outro]
+    const timeline_2 = [preload, intro, ...present_6_absent_6, debrief, save_data, outro]
 
     // piloting from 
-    // const timeline_0 = [preload, intro, make_trial_sequence(false),make_trial_sequence(true), debrief]
-    // const timeline_1 = [preload, intro, make_trial_sequence(false),make_trial_sequence(true), debrief]
-    // const timeline_2 = [preload, intro, make_trial_sequence(false),make_trial_sequence(true), debrief]
+    // const timeline_0 = [preload, intro, make_trial_sequence(false),make_trial_sequence(true), debrief, save_data, outro]
+    // const timeline_1 = [preload, intro, make_trial_sequence(false),make_trial_sequence(true), debrief, save_data, outro]
+    // const timeline_2 = [preload, intro, make_trial_sequence(false),make_trial_sequence(true), debrief, save_data, outro]
 
 
     async function createExperiment(){
@@ -305,7 +342,6 @@
 
   </script>
 </html>
-
 
 
 
